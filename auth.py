@@ -11,7 +11,7 @@ from database import get_db
 from models import User
 
 # In production, load SECRET_KEY from an environment variable.
-SECRET_KEY = "change-this-to-a-long-random-secret-in-production"
+SECRET_KEY = "abc123"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 
