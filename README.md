@@ -1,68 +1,32 @@
 # Estate — Property Rental Management System
 
-A FastAPI + SQLite + JWT application for property owners to manage rental
-properties, with full CRUD, image upload, and a clean HTML/CSS frontend.
+**Version 1.0** — Core build
+
+A FastAPI + SQLite application for property owners to manage rental
+properties. This first version establishes the foundation: a working
+backend with full CRUD and a basic HTML/CSS interface.
+
+## What's in this version
+- FastAPI backend with SQLite database (SQLAlchemy ORM)
+- Property model: title, address, city, type, rent, status, image
+- Full CRUD endpoints — GET, POST, PUT, DELETE
+- HTML/CSS frontend pages served by FastAPI
 
 ## Stack
-- **Backend:** Python, FastAPI, SQLAlchemy
-- **Database:** SQLite (`rental.db`, created automatically)
-- **Auth:** JWT (signup / login, Bearer tokens)
-- **Frontend:** HTML + CSS (Bricolage Grotesque + Inter), minimal vanilla JS
-- **Images:** uploaded to `static/uploads/`
-
-## Project structure
-```
-property-rental/
-├── main.py            # FastAPI app: auth, CRUD, upload, page routes, demo seed
-├── database.py        # SQLite + SQLAlchemy setup
-├── models.py          # User, Property
-├── schemas.py         # Pydantic request/response models
-├── auth.py            # password hashing + JWT
-├── requirements.txt
-├── frontend/
-│   ├── login.html
-│   ├── signup.html
-│   ├── index.html     # dashboard + property gallery
-│   ├── create.html    # add property
-│   └── update.html    # edit property
-└── static/
-    ├── style.css
-    ├── app.js         # shared auth + fetch helpers
-    └── uploads/       # uploaded images land here
-```
+- Backend: Python, FastAPI, SQLAlchemy
+- Database: SQLite
+- Frontend: HTML + CSS
 
 ## Run it
 ```bash
-cd property-rental
 python -m venv .venv
-# Windows:  .venv\Scripts\activate
-# macOS/Linux:  source .venv/bin/activate
+.venv\Scripts\activate        # Windows
 pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 Open http://127.0.0.1:8000
 
-**Demo login:** `demo@rental.app` / `demo1234` (comes with 4 sample properties),
-or create your own account on the sign-up page.
-
-## API (all property routes require a Bearer token)
-| Method | Route                      | Action            |
-|--------|----------------------------|-------------------|
-| POST   | `/api/signup`              | Register          |
-| POST   | `/api/login`               | Log in, get token |
-| GET    | `/api/me`                  | Current user      |
-| POST   | `/api/upload`              | Upload an image   |
-| GET    | `/api/properties`          | List (own)        |
-| GET    | `/api/properties/{id}`     | Read one          |
-| POST   | `/api/properties`          | Create            |
-| PUT    | `/api/properties/{id}`     | Update            |
-| DELETE | `/api/properties/{id}`     | Delete            |
-
-Interactive API docs are available at http://127.0.0.1:8000/docs
-
-## Notes
-- Each user only sees and edits their own properties.
-- Change `SECRET_KEY` in `auth.py` before deploying anywhere real.
-- The schema extends cleanly to tenants, agreements, and payments if you want
-  to grow it into the full brief later.
-```
+## Roadmap
+- v2 — JWT authentication & secure, per-user data
+- v3 — Image upload & redesigned dashboard
+- v4 — Tenants, agreements & payment records
