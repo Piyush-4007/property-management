@@ -1,27 +1,41 @@
 # Estate — Property Rental Management System
 
-**Version 3.0** — Image upload & redesigned dashboard
+**Version 4.0** — Complete system
 
-This version brings the interface to life. Property owners can now upload
-photos for each listing, and the whole app has been redesigned into a clean,
-modern dashboard with at-a-glance portfolio stats.
+The full Property Rental Management System. On top of secure, image-rich
+property management, this version completes the brief with tenants, rental
+agreements, and payment records — everything an owner needs in one place.
 
-## What's new in v3
-- Image upload — photos saved to `static/uploads/` and shown on cards
-- Redesigned "Estate" dashboard: forest + brass theme, Bricolage + Inter
-- Stats band: total properties, available, rented, monthly rent
-- Image-led property cards with status badges
-- Demo account seeded with sample properties
+## What's new in v4
+- Tenant records and management
+- Rental agreements linking properties to tenants
+- Payment records and tracking
+- Unified dashboard across the full rental workflow
 
-## Carried over
-- JWT authentication & per-user data (v2)
-- Full property CRUD on FastAPI + SQLite (v1)
+## The complete feature set
+- Full CRUD — GET, POST, PUT, DELETE — across all entities
+- JWT authentication with per-user data isolation
+- Image upload for property listings
+- Modern HTML/CSS dashboard with portfolio stats
 
 ## Stack
 - Backend: Python, FastAPI, SQLAlchemy
-- Auth: JWT, bcrypt
+- Auth: JWT (python-jose), bcrypt (passlib)
 - Database: SQLite
 - Frontend: HTML + CSS
+
+## Project structure
+```
+property-management/
+├── main.py            # FastAPI app: auth, CRUD, upload, pages
+├── database.py        # SQLite + SQLAlchemy setup
+├── models.py          # User, Property (+ tenants, agreements, payments)
+├── schemas.py         # Pydantic request/response models
+├── auth.py            # password hashing + JWT
+├── requirements.txt
+├── frontend/          # HTML pages
+└── static/            # CSS, JS, uploaded images
+```
 
 ## Run it
 ```bash
@@ -33,5 +47,5 @@ uvicorn main:app --reload
 Open http://127.0.0.1:8000
 Demo login: **demo@rental.app** / **demo1234**
 
-## Roadmap
-- v4 — Tenants, agreements & payment records (full system)
+## API
+Interactive docs at http://127.0.0.1:8000/docs
