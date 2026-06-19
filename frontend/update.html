@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit property · Estate</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar__in">
+    <a class="brand" href="/dashboard">
+      <div class="brand__mark">E</div>
+      <div class="brand__name">Estate</div>
+    </a>
+    <div class="topbar__right">
+      <div class="who"><div class="nm" id="who-name">—</div><div class="rl">Property Owner</div></div>
+      <div class="avatar" id="who-avatar">?</div>
+      <button class="btn btn-ghost" id="logout">Log out</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap fade-in">
+  <a class="back-link" href="/dashboard">
+    <svg class="ic" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg> Back to dashboard
+  </a>
+
+  <div class="formcard">
+    <div class="formcard__head">
+      <h1>Edit property</h1>
+      <p>Update the details below and save your changes.</p>
+    </div>
+
+    <div class="formcard__body">
+      <div id="notice" class="notice"></div>
+
+      <div class="field">
+        <label>Photo</label>
+        <label class="uploader" for="file">
+          <img class="uploader__preview empty-ph" id="preview" alt="">
+          <div class="uploader__txt">
+            <b>Change photo</b>
+            <span id="file-name">JPG, PNG or WEBP</span>
+          </div>
+        </label>
+        <input type="file" id="file" accept="image/*" hidden>
+        <input type="hidden" id="image_url">
+      </div>
+
+      <div class="field">
+        <label for="title">Property title</label>
+        <input class="input" id="title">
+      </div>
+
+      <div class="row-2">
+        <div class="field">
+          <label for="type">Type</label>
+          <select class="select" id="type">
+            <option>Apartment</option><option>House</option>
+            <option>Villa</option><option>Studio</option><option>Penthouse</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="status">Status</label>
+          <select class="select" id="status">
+            <option>Available</option><option>Rented</option><option>Maintenance</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="address">Address</label>
+        <input class="input" id="address">
+      </div>
+      <div class="field">
+        <label for="city">City</label>
+        <input class="input" id="city">
+      </div>
+
+      <div class="row-3">
+        <div class="field"><label for="bedrooms">Bedrooms</label><input class="input" id="bedrooms" type="number" min="0"></div>
+        <div class="field"><label for="bathrooms">Bathrooms</label><input class="input" id="bathrooms" type="number" min="0"></div>
+        <div class="field"><label for="area_sqft">Area (ft²)</label><input class="input" id="area_sqft" type="number" min="0"></div>
+      </div>
+
+      <div class="row-2">
+        <div class="field"><label for="rent_amount">Monthly rent (₹)</label><input class="input" id="rent_amount" type="number" min="0"></div>
+        <div class="field"><label for="tenant_name">Current tenant <span style="color:var(--muted-2);font-weight:400">(optional)</span></label><input class="input" id="tenant_name"></div>
+      </div>
+
+      <div class="field">
+        <label for="description">Description</label>
+        <textarea class="textarea" id="description"></textarea>
+      </div>
+    </div>
+
+    <div class="formcard__foot">
+      <a class="btn btn-ghost" href="/dashboard">Cancel</a>
+      <button class="btn btn-primary" id="save">Save changes</button>
+    </div>
+  </div>
+</main>
+
+<script src="/static/app.js"></script>
+<script>
+  if (!requireAuth()) {}
+  const user = getUser() || {};
+  document.getElementById("who-name").textContent = user.full_name || "Owner";
+  document.getElementById("who-avatar").textContent = initials(user.full_name);
+  document.getElementById("logout").addEventListener("click", logout);
+
+  const id = new URLSearchParams(location.search).get("id");
+  if (!id) location.href = "/dashboard";
+
+  const notice = document.getElementById("notice");
+  const preview = document.getElementById("preview");
+  const set = (k, v) => document.getElementById(k).value = v;
+  const val = id => document.getElementById(id).value;
+  const num = id => Number(document.getElementById(id).value || 0);
+  function show(msg, kind) { notice.className = "notice " + kind; notice.textContent = msg; }
+
+  // ---- image upload ----
+  document.getElementById("file").addEventListener("change", async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    preview.src = URL.createObjectURL(f); preview.classList.remove("empty-ph");
+    document.getElementById("file-name").textContent = "Uploading…";
+    const fd = new FormData(); fd.append("file", f);
+    try {
+      const res = await api("/api/upload", { method: "POST", body: fd });
+      set("image_url", res.image_url);
+      document.getElementById("file-name").textContent = f.name + " · uploaded";
+    } catch (err) {
+      document.getElementById("file-name").textContent = "Upload failed — " + err.message;
+    }
+  });
+
+  // ---- load existing ----
+  async function load() {
+    try {
+      const p = await api("/api/properties/" + id);
+      ["title","address","city","type","status","bedrooms","bathrooms",
+       "area_sqft","rent_amount","tenant_name","description","image_url"].forEach(k => set(k, p[k]));
+      if (p.image_url) { preview.src = p.image_url; preview.classList.remove("empty-ph"); }
+    } catch (e) { show("Couldn't load this property — " + e.message, "err"); }
+  }
+
+  // ---- save (PUT) ----
+  document.getElementById("save").addEventListener("click", async () => {
+    notice.className = "notice";
+    if (!val("title").trim() || !val("address").trim() || !val("city").trim())
+      return show("Title, address and city are required.", "err");
+    const body = {
+      title: val("title").trim(), address: val("address").trim(), city: val("city").trim(),
+      type: val("type"), status: val("status"),
+      bedrooms: num("bedrooms"), bathrooms: num("bathrooms"), area_sqft: num("area_sqft"),
+      rent_amount: num("rent_amount"), tenant_name: val("tenant_name").trim(),
+      description: val("description").trim(), image_url: val("image_url"),
+    };
+    const btn = document.getElementById("save");
+    btn.disabled = true; btn.textContent = "Saving…";
+    try {
+      await api("/api/properties/" + id, { method: "PUT", body: JSON.stringify(body) });
+      location.href = "/dashboard";
+    } catch (e) {
+      show(e.message, "err"); btn.disabled = false; btn.textContent = "Save changes";
+    }
+  });
+
+  load();
+</script>
+</body>
+</html>

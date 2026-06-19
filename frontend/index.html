@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard · Estate</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar__in">
+    <a class="brand" href="/dashboard">
+      <div class="brand__mark">E</div>
+      <div class="brand__name">Estate</div>
+    </a>
+    <div class="topbar__right">
+      <div class="who">
+        <div class="nm" id="who-name">—</div>
+        <div class="rl">Property Owner</div>
+      </div>
+      <div class="avatar" id="who-avatar">?</div>
+      <button class="btn btn-ghost" id="logout">Log out</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap fade-in">
+  <div class="pagehead">
+    <div>
+      <span class="eyebrow">Portfolio overview</span>
+      <h1>Your properties</h1>
+      <p id="sub-line">Everything you own and rent, in one place.</p>
+    </div>
+    <a class="btn btn-primary btn-lg" href="/create">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      Add property
+    </a>
+  </div>
+
+  <!-- Stats -->
+  <section class="stats" id="stats">
+    <div class="stat"><div class="label">Total properties</div><div class="value" id="s-total">—</div></div>
+    <div class="stat"><div class="label">Available</div><div class="value" id="s-avail">—</div></div>
+    <div class="stat"><div class="label">Rented</div><div class="value" id="s-rented">—</div></div>
+    <div class="stat"><div class="label">Monthly rent</div><div class="value" id="s-rent">—</div></div>
+  </section>
+
+  <!-- Property grid -->
+  <section id="grid" class="grid"></section>
+</main>
+
+<script src="/static/app.js"></script>
+<script>
+  if (!requireAuth()) { /* redirected */ }
+
+  const user = getUser() || {};
+  document.getElementById("who-name").textContent = user.full_name || "Owner";
+  document.getElementById("who-avatar").textContent = initials(user.full_name);
+  document.getElementById("logout").addEventListener("click", logout);
+
+  const grid = document.getElementById("grid");
+
+  function specsIcon(d) {
+    return `
+      <span title="Bedrooms"><svg class="ic" viewBox="0 0 24 24"><path d="M3 18v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6M3 14h18M6 10V8a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/></svg><b>${d.bedrooms}</b> bd</span>
+      <span title="Bathrooms"><svg class="ic" viewBox="0 0 24 24"><path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-3ZM7 12V6a2 2 0 0 1 4 0"/></svg><b>${d.bathrooms}</b> ba</span>
+      ${d.area_sqft ? `<span title="Area"><svg class="ic" viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 9h16M9 4v16"/></svg><b>${d.area_sqft}</b> ft²</span>` : ""}
+    `;
+  }
+
+  function card(p) {
+    const media = p.image_url
+      ? `<img src="${esc(p.image_url)}" alt="${esc(p.title)}" loading="lazy"
+              onerror="this.parentElement.innerHTML='<div class=&quot;ph&quot;>No image</div>'">`
+      : `<div class="ph">No image</div>`;
+    return `
+      <article class="card">
+        <div class="card__media">
+          ${media}
+          <span class="pill ${statusClass(p.status)}">${esc(p.status)}</span>
+        </div>
+        <div class="card__body">
+          <div class="card__type">${esc(p.type)}</div>
+          <div class="card__title">${esc(p.title)}</div>
+          <div class="card__addr">
+            <svg class="ic" viewBox="0 0 24 24"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            ${esc(p.address)}, ${esc(p.city)}
+          </div>
+          <div class="card__specs">${specsIcon(p)}</div>
+          <div class="card__foot">
+            <div class="card__rent">${inr(p.rent_amount)}<small> /mo</small></div>
+            <div class="card__actions">
+              <a class="iconbtn" href="/update?id=${p.id}" title="Edit">
+                <svg class="ic" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/></svg>
+              </a>
+              <button class="iconbtn del" title="Delete" data-id="${p.id}" data-title="${esc(p.title)}">
+                <svg class="ic" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </article>`;
+  }
+
+  function renderStats(items) {
+    const total = items.length;
+    const avail = items.filter(p => p.status === "Available").length;
+    const rented = items.filter(p => p.status === "Rented").length;
+    const rent = items.filter(p => p.status === "Rented")
+                      .reduce((s, p) => s + (p.rent_amount || 0), 0);
+    document.getElementById("s-total").textContent = total;
+    document.getElementById("s-avail").textContent = avail;
+    document.getElementById("s-rented").textContent = rented;
+    document.getElementById("s-rent").innerHTML = inr(rent) + "<small> /mo</small>";
+  }
+
+  async function load() {
+    grid.innerHTML = Array.from({length:3}).map(()=>'<div class="skeleton"></div>').join("");
+    try {
+      const items = await api("/api/properties");
+      renderStats(items);
+      document.getElementById("sub-line").textContent =
+        items.length ? `Managing ${items.length} ${items.length === 1 ? "property" : "properties"}.`
+                     : "Add your first property to get started.";
+      if (!items.length) {
+        grid.innerHTML = `
+          <div class="empty" style="grid-column:1/-1">
+            <h3>No properties yet</h3>
+            <p>Add your first listing and it'll appear here.</p>
+            <a class="btn btn-primary" href="/create">Add a property</a>
+          </div>`;
+        return;
+      }
+      grid.innerHTML = items.map(card).join("");
+    } catch (e) {
+      grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>Couldn't load properties</h3><p>${esc(e.message)}</p></div>`;
+    }
+  }
+
+  async function removeProp(id, title) {
+    if (!confirm(`Delete "${title}"? This can't be undone.`)) return;
+    try {
+      await api("/api/properties/" + id, { method: "DELETE" });
+      load();
+    } catch (e) { alert(e.message); }
+  }
+
+  // delegated delete handler (safe with any title characters)
+  grid.addEventListener("click", (e) => {
+    const btn = e.target.closest(".iconbtn.del");
+    if (btn) removeProp(btn.dataset.id, btn.dataset.title);
+  });
+
+  load();
+</script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create account · Estate</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="auth">
+  <aside class="auth__brandside">
+    <div class="brand">
+      <div class="brand__mark">E</div>
+      <div class="brand__name">Estate</div>
+    </div>
+    <div class="auth__pitch">
+      <span class="eyebrow" style="color:#bcae84">Property Rental Management</span>
+      <h1>Start managing in minutes.</h1>
+      <p>Add your first property, upload a photo, and watch your portfolio come together.</p>
+      <div class="auth__stats">
+        <div class="auth__stat"><div class="n">CRUD</div><div class="l">Full control</div></div>
+        <div class="auth__stat"><div class="n">JWT</div><div class="l">Secure access</div></div>
+        <div class="auth__stat"><div class="n">SQLite</div><div class="l">Zero setup</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="auth__formside">
+    <div class="auth__form fade-in">
+      <span class="eyebrow">Get started</span>
+      <h2>Create your account</h2>
+      <p class="sub">It takes less than a minute.</p>
+
+      <div id="notice" class="notice"></div>
+
+      <div class="field">
+        <label for="name">Full name</label>
+        <input class="input" type="text" id="name" placeholder="Piyush Singh" autocomplete="name">
+      </div>
+      <div class="field">
+        <label for="email">Email address</label>
+        <input class="input" type="email" id="email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input class="input" type="password" id="password" placeholder="At least 6 characters" autocomplete="new-password">
+      </div>
+      <button class="btn btn-primary btn-block btn-lg" id="submit">Create account</button>
+
+      <p class="auth__alt">Already have an account? <a href="/login">Sign in</a></p>
+    </div>
+  </main>
+</div>
+
+<script src="/static/app.js"></script>
+<script>
+  if (getToken()) location.href = "/dashboard";
+
+  const notice = document.getElementById("notice");
+  const btn = document.getElementById("submit");
+
+  async function submit() {
+    const full_name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    notice.className = "notice";
+    if (!full_name || !email || !password) return show("Please fill in every field.", "err");
+    if (password.length < 6) return show("Password must be at least 6 characters.", "err");
+    btn.disabled = true; btn.textContent = "Creating…";
+    try {
+      const data = await api("/api/signup", { method: "POST", body: JSON.stringify({ full_name, email, password }) });
+      saveSession(data.access_token, data.user);
+      location.href = "/dashboard";
+    } catch (e) {
+      show(e.message, "err");
+      btn.disabled = false; btn.textContent = "Create account";
+    }
+  }
+  function show(msg, kind) { notice.className = "notice " + kind; notice.textContent = msg; }
+
+  btn.addEventListener("click", submit);
+  document.querySelectorAll(".input").forEach(i =>
+    i.addEventListener("keydown", e => { if (e.key === "Enter") submit(); }));
+</script>
+</body>
+</html>

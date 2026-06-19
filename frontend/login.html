@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign in · Estate</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="auth">
+  <!-- Brand side -->
+  <aside class="auth__brandside">
+    <div class="brand">
+      <div class="brand__mark">E</div>
+      <div class="brand__name">Estate</div>
+    </div>
+    <div class="auth__pitch">
+      <span class="eyebrow" style="color:#bcae84">Property Rental Management</span>
+      <h1>Your portfolio, fully under one roof.</h1>
+      <p>Track properties, tenants, rent and availability — from a single quiet dashboard.</p>
+      <div class="auth__stats">
+        <div class="auth__stat"><div class="n">4</div><div class="l">Properties</div></div>
+        <div class="auth__stat"><div class="n">₹2.4L</div><div class="l">Monthly rent</div></div>
+        <div class="auth__stat"><div class="n">98%</div><div class="l">Occupancy</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Form side -->
+  <main class="auth__formside">
+    <div class="auth__form fade-in">
+      <span class="eyebrow">Welcome back</span>
+      <h2>Sign in to Estate</h2>
+      <p class="sub">Manage your rental portfolio in one place.</p>
+
+      <div id="notice" class="notice"></div>
+
+      <div class="field">
+        <label for="email">Email address</label>
+        <input class="input" type="email" id="email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input class="input" type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary btn-block btn-lg" id="submit">Sign in</button>
+
+      <p class="auth__alt">New here? <a href="/signup">Create an account</a></p>
+
+      <div class="demo-hint">
+        Demo login — <b>demo@rental.app</b> / <b>demo1234</b>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/static/app.js"></script>
+<script>
+  if (getToken()) location.href = "/dashboard";
+
+  const notice = document.getElementById("notice");
+  const btn = document.getElementById("submit");
+
+  async function submit() {
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    notice.className = "notice";
+    if (!email || !password) { return show("Enter your email and password.", "err"); }
+    btn.disabled = true; btn.textContent = "Signing in…";
+    try {
+      const data = await api("/api/login", { method: "POST", body: JSON.stringify({ email, password }) });
+      saveSession(data.access_token, data.user);
+      location.href = "/dashboard";
+    } catch (e) {
+      show(e.message, "err");
+      btn.disabled = false; btn.textContent = "Sign in";
+    }
+  }
+  function show(msg, kind) { notice.className = "notice " + kind; notice.textContent = msg; }
+
+  btn.addEventListener("click", submit);
+  document.querySelectorAll(".input").forEach(i =>
+    i.addEventListener("keydown", e => { if (e.key === "Enter") submit(); }));
+</script>
+</body>
+</html>
